@@ -14,14 +14,14 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 @Service
 @RequiredArgsConstructor
 public class TGBot extends TelegramLongPollingBot {
+    private final RequestProcessor requestProcessor;
     @Value("${telegram.bot.username}")
     private String botUsername;
     @Value("${telegram.bot.token}")
     private String botToken;
-    private final UpdateProcessor updateProcessor;
 
     @PostConstruct
-    void initBot(){
+    void initBot() {
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             botsApi.registerBot(this);
@@ -42,13 +42,12 @@ public class TGBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-       var response = updateProcessor.processUpdates(update);
-        SendMessage message = new SendMessage(); // Create a SendMessage object with mandatory fields
+        var response = requestProcessor.processRequest(update);
+        SendMessage message = new SendMessage();
         message.setChatId(update.getMessage().getChatId().toString());
         message.setText(response);
-
         try {
-            execute(message); // Call method to send the message
+            execute(message);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

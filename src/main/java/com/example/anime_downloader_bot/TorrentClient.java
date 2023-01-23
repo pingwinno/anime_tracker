@@ -2,40 +2,50 @@ package com.example.anime_downloader_bot;
 
 import lombok.SneakyThrows;
 import okhttp3.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class TorrentClient {
+    public static final String ADD_REQUEST_TEMPLATE = """
+            {
+               "arguments": {
+                   "filename": "%s"},
+               "method": "torrent-add",
+               "tag": 39693
+            }""";
     private final OkHttpClient client = new OkHttpClient();
+    @Value("${transmission.url}")
+    private String transmissionUrl;
+    @Value("${transmission.login}")
+    private String transmissionLogin;
+    @Value("${transmission.password}")
+    private String transmissionPassword;
     private String CSRFHeader = "invalid token";
-    @SneakyThrows
-    public String addTorrent() {
-        var json = "{\n" +
-                "   \"arguments\": {\n" +
-                "       \"filename\": \"https://tv3.darklibria.it/upload/torrents/22222.torrent\"" +
-                "   },\n" +
-                "   \"method\": \"torrent-add\",\n" +
-                "   \"tag\": 39693\n" +
-                "}";
-        RequestBody body = RequestBody.create(
-                MediaType.parse("application/json"), json);
 
-        Request request = new Request.Builder()
-                .url("http://192.168.50.100:9091/transmission/rpc")
-                .addHeader("Authorization", Credentials.basic("transmission", "4b06a499ef180c1ed352f7yOSpysqi"))
+    @SneakyThrows
+    public String addTorrent(String torrentLink) {
+        var json = String.format(ADD_REQUEST_TEMPLATE,torrentLink);
+        Response response = client.newCall(buildRequest(json)).execute();
+
+        if (response.code() == 409) {
+            CSRFHeader = response.header("X-Transmission-Session-Id");
+            response = client.newCall(buildRequest(json)).execute();
+        }
+
+        var responseString = response.body().string();
+        response.body().close();
+        return responseString;
+    }
+
+    private Request buildRequest(String json) {
+        var body = RequestBody.create(json,
+                MediaType.parse("application/json"));
+        return new Request.Builder()
+                .url(transmissionUrl + "/transmission/rpc")
+                .addHeader("Authorization", Credentials.basic(transmissionLogin, transmissionPassword))
                 .addHeader("X-Transmission-Session-Id", CSRFHeader)
                 .post(body)
                 .build();
-
-        Call call = client.newCall(request);
-        Response response = call.execute();
-        var responseString = response.body().string();
-        if (response.code() == 409){
-          CSRFHeader = response.header("X-Transmission-Session-Id");
-            System.out.println("CSRF is " + CSRFHeader);
-        }
-
-        System.out.println(responseString);
-        return responseString;
     }
 }
