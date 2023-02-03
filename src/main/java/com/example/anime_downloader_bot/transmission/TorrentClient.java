@@ -1,4 +1,4 @@
-package com.example.anime_downloader_bot;
+package com.example.anime_downloader_bot.transmission;
 
 import lombok.SneakyThrows;
 import okhttp3.*;
@@ -27,14 +27,13 @@ public class TorrentClient {
     public String addTorrent(String torrentLink) {
         var json = String.format(ADD_REQUEST_TEMPLATE,torrentLink);
         Response response = client.newCall(buildRequest(json)).execute();
-
         if (response.code() == 409) {
             CSRFHeader = response.header("X-Transmission-Session-Id");
             response = client.newCall(buildRequest(json)).execute();
         }
 
         var responseString = response.body().string();
-        response.body().close();
+        response.close();
         return responseString;
     }
 

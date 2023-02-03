@@ -1,8 +1,4 @@
-package com.example.anime_downloader_bot;
-
-import lombok.SneakyThrows;
-
-import java.io.IOException;
+package com.example.anime_downloader_bot.site;
 
 public interface SiteParser {
 

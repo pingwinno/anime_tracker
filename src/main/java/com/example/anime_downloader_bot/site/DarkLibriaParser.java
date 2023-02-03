@@ -1,5 +1,6 @@
-package com.example.anime_downloader_bot;
+package com.example.anime_downloader_bot.site;
 
+import com.example.anime_downloader_bot.site.SiteParser;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
