@@ -17,10 +17,11 @@ import static jakarta.persistence.GenerationType.TABLE;
 public class UpdateJob {
     @Id
     @GeneratedValue(strategy = TABLE)
-    private long id;
+    private Long id;
     private String animePage;
     private String pattern;
     private Integer torrentId;
+    private Long chatId;
     @Transient
     private String transmissionResponse;
 }

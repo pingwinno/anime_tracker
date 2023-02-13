@@ -11,11 +11,11 @@ import org.springframework.stereotype.Component;
 public class RequestProcessor {
     private final UpdateService updateService;
 
-    public UpdateJob processRequest(String message) {
+    public void processRequest(String message, long chatId) {
+        log.info("Processing message {} from chat {}", message, chatId);
         var paramArray = message.split(",");
         var pattern = paramArray[1].trim();
         var animeLink = paramArray[0].trim();
-
-        return updateService.updateTorrent(animeLink, pattern);
+        updateService.updateTorrent(animeLink, pattern, chatId);
     }
 }

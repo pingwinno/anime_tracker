@@ -1,5 +1,6 @@
 package com.example.anime_downloader_bot.domain;
 
+import com.example.anime_downloader_bot.event.MessageEvent;
 import com.example.anime_downloader_bot.persistance.UpdateJob;
 import com.example.anime_downloader_bot.persistance.UpdateJobRepository;
 import com.example.anime_downloader_bot.site.SiteParser;
@@ -7,6 +8,7 @@ import com.example.anime_downloader_bot.transmission.TorrentClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -16,13 +18,15 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @RequiredArgsConstructor
 public class UpdateService {
+
+    private final ApplicationEventPublisher applicationEventPublisher;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final TorrentClient torrentClient;
     private final SiteParser darkLibriaParser;
 
     private final UpdateJobRepository updateJobRepository;
 
-    public UpdateJob updateTorrent(String animePage, String pattern) {
+    public void updateTorrent(String animePage, String pattern, long chatId) {
         UpdateJob updateJob = null;
         try {
             var torrentLink = darkLibriaParser.getTorrentLink(animePage, pattern);
@@ -35,17 +39,24 @@ public class UpdateService {
                         .animePage(animePage)
                         .torrentId(torrentId)
                         .transmissionResponse(transmissionResponse)
+                        .chatId(chatId)
                         .build();
                 updateJobRepository.save(updateJob);
             }
+            sendUpdateMessage(transmissionResponse, chatId);
         } catch (Exception e) {
             log.error(e.toString());
+            sendUpdateMessage(e.toString(), chatId);
         }
-        return updateJob;
+    }
+
+    private void sendUpdateMessage(String message, Long chatId) {
+        applicationEventPublisher.publishEvent(new MessageEvent(message, chatId));
     }
 
     @Scheduled(timeUnit = TimeUnit.DAYS, fixedRate = 1)
     public void updateTorrents() {
-        updateJobRepository.getAll().forEach(updateJob -> updateTorrent(updateJob.getAnimePage(), updateJob.getPattern()));
+        log.info("Updating torrents...");
+        updateJobRepository.findAll().forEach(updateJob -> updateTorrent(updateJob.getAnimePage(), updateJob.getPattern(), updateJob.getChatId()));
     }
 }

@@ -1,8 +1,11 @@
 package com.example.anime_downloader_bot.telegram;
 
 import com.example.anime_downloader_bot.domain.RequestProcessor;
-import jakarta.annotation.PostConstruct;
+import com.example.anime_downloader_bot.event.MessageEvent;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
@@ -19,10 +22,10 @@ import static org.telegram.abilitybots.api.objects.Locality.USER;
 import static org.telegram.abilitybots.api.objects.Privacy.CREATOR;
 
 @Service
-public class TGBot extends AbilityBot {
-    private final RequestProcessor requestProcessor;
+public class TGBot extends AbilityBot implements ApplicationRunner {
 
-    Consumer<MessageContext> contextConsumer;
+    private RequestProcessor requestProcessor;
+    private Consumer<MessageContext> contextConsumer;
 
 
     @Value("${telegram.bot.creatorId}")
@@ -30,23 +33,10 @@ public class TGBot extends AbilityBot {
 
     public TGBot(@Value("${telegram.bot.token}") String botToken, @Value("${telegram.bot.username}") String botUsername, RequestProcessor requestProcessor) {
         super(botToken, botUsername, new BareboneToggle());
-        this.requestProcessor = requestProcessor;
-        contextConsumer = ctx -> silent.send(requestProcessor.processRequest(ctx.update().getMessage().getText()).getTransmissionResponse(), ctx.chatId());
+        contextConsumer = ctx -> requestProcessor.processRequest(ctx.update().getMessage().getText(), ctx.chatId());
     }
-
-    @PostConstruct
-    void initBot() {
-        try {
-            TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            botsApi.registerBot(this);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
 
     @Override
-
     public long creatorId() {
         return creatorId;
     }
@@ -60,5 +50,20 @@ public class TGBot extends AbilityBot {
                 .input(0)
                 .action(contextConsumer)
                 .build();
+    }
+
+    @EventListener
+    public void sendTelegramMessage(MessageEvent messageEvent) {
+        silent.send(messageEvent.getMessage(), messageEvent.getChatId());
+    }
+
+    @Override
+    public void run(ApplicationArguments args) {
+        try {
+            TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
+            botsApi.registerBot(this);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 }
