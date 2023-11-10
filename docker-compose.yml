@@ -1,9 +1,0 @@
-version: '3.0'
-services:
-  web:
-    image: pingwinno/anime-downloader
-    restart: always
-    volumes:
-      - settings:/opt/app/animedl
-volumes:
-  settings:

@@ -16,8 +16,6 @@ import static jakarta.persistence.GenerationType.TABLE;
 @Entity
 public class UpdateJob {
     @Id
-    @GeneratedValue(strategy = TABLE)
-    private Long id;
     private String animePage;
     private String pattern;
     private Integer torrentId;
