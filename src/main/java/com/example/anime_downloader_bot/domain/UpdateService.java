@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -45,7 +46,7 @@ public class UpdateService {
             }
             sendUpdateMessage(transmissionResponse, chatId);
         } catch (Exception e) {
-            log.error(e.toString());
+            log.error(Arrays.toString(e.getStackTrace()));
             sendUpdateMessage(e.toString(), chatId);
         }
     }
